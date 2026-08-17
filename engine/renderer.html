@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #0a0a0c; }
+      #three-layer { width: 100%; height: 100%; display: block; }
+    </style>
+  </head>
+  <body>
+    <!--
+      白模通用渲染器 —— 不要手改这个文件，改 scene.json 后重跑 build.mjs。
+      三个属性不能动（改时长只改 scene.json，build 会重写这里）：
+        data-duration    three 适配器不做时长推断，缺了报 "zero duration"
+        data-no-timeline 没有它，渲染器会轮询 GSAP timeline 白等 45 秒
+        data-width/height 与 renderer.setSize 一致
+    -->
+    <div
+      id="root"
+      data-composition-id="main"
+      data-no-timeline
+      data-start="0"
+      data-duration="__DURATION__"
+      data-width="__WIDTH__"
+      data-height="__HEIGHT__"
+    >
+      <canvas id="three-layer"></canvas>
+    </div>
+
+    <script type="module">
+      import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.181.2/+esm";
+
+      /* ═══════ scene.json（由 build.mjs 注入，勿手改）═══════ */
+      const SCENE = __SCENE__;
+
+      /* ═══════ solver.mjs（由 build.mjs 注入，勿手改）═══════ */
+      __SOLVER__
+
+      const W = SCENE.meta.width ?? 1920, H = SCENE.meta.height ?? 1080;
+      const DUR = SCENE.meta.duration;
+
+      const canvas = document.getElementById("three-layer");
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setSize(W, H, false);
+      renderer.setPixelRatio(1);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      // JSON 里没有十六进制字面量，颜色写成 "0x1a1c20" / "#1a1c20" / 数字都收。
+      // ⚠️ 直接把 "0x1a1c20" 丢给 THREE.Color 会静默变成白色，远景连雾一起发白，别踩
+      const toColor = (v, d) => {
+        if (v === undefined || v === null) return d;
+        if (typeof v === "number") return v;
+        return parseInt(String(v).replace(/^#|^0x/i, ""), 16);
+      };
+
+      const scene = new THREE.Scene();
+      const bg = new THREE.Color(toColor(SCENE.world?.background, 0x1a1c20));
+      scene.background = bg;
+      if (SCENE.world?.fog) scene.fog = new THREE.Fog(bg, SCENE.world.fog[0], SCENE.world.fog[1]);
+
+      const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 600);
+
+      // 白模只有明暗，没有颜色信息。主角给一个饱和色，让 AI 认出「谁是主角」
+      const PALETTE = {
+        hero:   0xc0392b,   // 主角。全片只有一个饱和色
+        second: 0x2c6fbb,   // 第二主体（对手/搭档）。用得越少越好
+        crowd:  0xb9b9bf,
+        env:    0xdedede,
+        dark:   0x6a6a70,
+        ground: 0x8a8a8a,
+      };
+      const MAT = {};
+      for (const [k, c] of Object.entries(PALETTE))
+        MAT[k] = new THREE.MeshStandardMaterial({ color: c, roughness: k === "ground" ? 1 : 0.82, metalness: 0 });
+      const matOf = (name) => MAT[name] ?? MAT.env;
+
+      const rand = makeRand(SCENE.meta.seed ?? 20260817);
+
+      // ── 几何体工厂 ──────────────────────────────────────
+      function makeMesh(spec) {
+        const s = spec.size ?? [1, 1, 1];
+        let g;
+        switch (spec.shape) {
+          case "box":      g = new THREE.BoxGeometry(s[0], s[1], s[2]); break;
+          case "cone":     g = new THREE.ConeGeometry(spec.r ?? 1, spec.h ?? 3, 24); break;
+          case "cylinder": g = new THREE.CylinderGeometry(spec.r ?? 0.4, spec.r2 ?? spec.r ?? 0.4, spec.h ?? 2, 20); break;
+          case "sphere":   g = new THREE.SphereGeometry(spec.r ?? 1, 20, 14); break;
+          case "torus":    g = new THREE.TorusGeometry(spec.r ?? 3, spec.tube ?? 0.3, 12, 40); break;
+          case "plane":    g = new THREE.PlaneGeometry(s[0], s[1]); break;
+          case "human":    return makeHuman(spec);
+          default: throw new Error("未知 shape: " + spec.shape);
+        }
+        const m = new THREE.Mesh(g, matOf(spec.color ?? "env"));
+        m.castShadow = true; m.receiveShadow = true;
+        // 统一规则：pos 永远是「贴地点」，y=0 就是放在地上。
+        // 各种几何体的原点位置不一样，差异在这里抹平，写 scene.json 时不用记
+        if (spec.shape === "cone" || spec.shape === "cylinder") m.position.y = (spec.h ?? 2) / 2;
+        if (spec.shape === "box") m.position.y = s[1] / 2;
+        if (spec.shape === "sphere") m.position.y = spec.r ?? 1;
+        if (spec.shape === "torus") { m.rotation.x = -Math.PI / 2; m.position.y = spec.y ?? (spec.tube ?? 0.3); }
+        if (spec.shape === "plane") m.rotation.x = -Math.PI / 2;
+        const wrap = new THREE.Group();
+        wrap.add(m);
+        return wrap;
+      }
+
+      // 人形：胶囊躯干 + 球头 + 前胸楔形。
+      // 那个楔形是朝向标记，别省——白模人物没有脸，正面背面一个样，
+      // 2026-08-16 三条片子全员倒着走熬了一夜没人看出来，靠的就是没有这个标记。
+      function makeHuman(spec) {
+        const h = spec.height ?? 1.75;
+        const g = new THREE.Group();
+        const mat = matOf(spec.color ?? "crowd");
+        const body = new THREE.Mesh(new THREE.CapsuleGeometry(h * 0.11, h * 0.52, 6, 14), mat);
+        body.position.y = h * 0.47; body.castShadow = true;
+        g.add(body);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(h * 0.095, 16, 12), mat);
+        head.position.y = h * 0.92; head.castShadow = true;
+        g.add(head);
+        const nose = new THREE.Mesh(new THREE.ConeGeometry(h * 0.035, h * 0.1, 8), mat);
+        nose.rotation.x = Math.PI / 2;                     // 朝 +Z，即人物正面
+        nose.position.set(0, h * 0.92, h * 0.11);
+        g.add(nose);
+        const chest = new THREE.Mesh(new THREE.BoxGeometry(h * 0.16, h * 0.16, h * 0.02), mat);
+        chest.position.set(0, h * 0.6, h * 0.11);
+        g.add(chest);
+        if (spec.skirt) {                                   // 裙摆/披风：给旋转类主体一个可读的外轮廓
+          const sk = new THREE.Mesh(new THREE.ConeGeometry(spec.skirt, h * 0.3, 24), mat);
+          sk.position.y = h * 0.28; sk.rotation.x = Math.PI;
+          g.add(sk);
+        }
+        return g;
+      }
+
+      // ── 布局生成器：不要手写 90 个圆锥 ──────────────────
+      function placements(spec) {
+        const L = spec.layout;
+        const base = spec.pos ?? [0, 0, 0];
+        if (!L) return [{ pos: base, rot: spec.rotY ?? 0 }];
+        const out = [];
+        const j = L.jitter ?? 0;
+        const jt = () => (rand() - 0.5) * 2 * j;
+        for (let i = 0; i < L.count; i++) {
+          if (L.type === "ring") {
+            const a = ((L.from ?? 0) + ((L.to ?? 360) - (L.from ?? 0)) * (i / L.count)) * Math.PI / 180;
+            const r = (L.radius ?? 5) + jt();
+            out.push({ pos: [base[0] + Math.cos(a) * r, base[1], base[2] + Math.sin(a) * r], rot: -a + Math.PI / 2 });
+          } else if (L.type === "grid") {
+            const cols = L.cols ?? Math.ceil(Math.sqrt(L.count));
+            const sp = L.spacing ?? [2, 2];
+            const x = (i % cols) - (cols - 1) / 2, z = Math.floor(i / cols) - (Math.ceil(L.count / cols) - 1) / 2;
+            out.push({ pos: [base[0] + x * sp[0] + jt(), base[1], base[2] + z * sp[1] + jt()], rot: L.rotY ?? 0 });
+          } else if (L.type === "line") {
+            const t = L.count === 1 ? 0 : i / (L.count - 1);
+            out.push({ pos: [lerp(L.from[0], L.to[0], t) + jt(), lerp(L.from[1], L.to[1], t), lerp(L.from[2], L.to[2], t) + jt()], rot: L.rotY ?? 0 });
+          } else if (L.type === "scatter") {
+            const a = L.area ?? [30, 30];
+            let x = (rand() - 0.5) * a[0], z = (rand() - 0.5) * a[1];
+            if (L.corridor) { const side = rand() > 0.5 ? 1 : -1; x = side * (L.corridor + rand() * (a[0] / 2 - L.corridor)); }
+            out.push({ pos: [base[0] + x, base[1], base[2] + z], rot: rand() * Math.PI * 2 });
+          }
+        }
+        return out;
+      }
+
+      // ── 建世界 ──────────────────────────────────────────
+      const gcfg = SCENE.world?.ground ?? { type: "plane", size: 400 };
+      if (gcfg.type !== "none") {
+        const geo = gcfg.type === "disc"
+          ? new THREE.CircleGeometry(gcfg.size ?? 20, 64)
+          : new THREE.PlaneGeometry(gcfg.size ?? 400, gcfg.size ?? 400);
+        const gm = new THREE.Mesh(geo, matOf(gcfg.color ?? "ground"));
+        gm.rotation.x = -Math.PI / 2;
+        gm.position.y = gcfg.y ?? 0;
+        gm.receiveShadow = true;
+        scene.add(gm);
+      }
+
+      for (const spec of SCENE.world?.props ?? []) {
+        for (const pl of placements(spec)) {
+          const o = makeMesh(spec);
+          o.position.set(pl.pos[0], pl.pos[1], pl.pos[2]);
+          o.rotation.y = (spec.rotY !== undefined ? spec.rotY * Math.PI / 180 : pl.rot);
+          scene.add(o);
+        }
+      }
+
+      // 动态主体
+      const SUBJ = {};
+      for (const s of SCENE.subjects ?? []) {
+        const o = s.shape === "human" || !s.shape ? makeHuman(s) : makeMesh(s);
+        scene.add(o);
+        SUBJ[s.id] = o;
+      }
+
+      // ── 灯光：单一主光 + 环境补光。阴影交代空间关系，不能关 ──
+      const lg = SCENE.world?.light ?? {};
+      const key = new THREE.DirectionalLight(0xffffff, lg.intensity ?? 2.4);
+      key.position.set(...(lg.pos ?? [-14, 26, 10]));
+      key.castShadow = true;
+      key.shadow.mapSize.set(2048, 2048);
+      const R = lg.shadowRange ?? 45;
+      key.shadow.camera.near = 1; key.shadow.camera.far = R * 3;
+      key.shadow.camera.left = -R; key.shadow.camera.right = R;
+      key.shadow.camera.top = R;  key.shadow.camera.bottom = -R;
+      scene.add(key);
+      // groundColor 不能给太暗：朝下的面（天花板底面、桥面底、屋檐）会渲成死黑一片，
+      // 在室内场景里直接吃掉半个画面。白模要的是「读得出体积」，不是好看的光影
+      scene.add(new THREE.HemisphereLight(0xffffff, toColor(lg.groundColor, 0x6e6e78), lg.ambient ?? 0.9));
+
+      // ── 每帧 ────────────────────────────────────────────
+      function renderAt(timeRaw) {
+        const time = Math.max(0, Math.min(DUR, timeRaw));
+
+        for (const s of SCENE.subjects ?? []) {
+          const st = subjectAt(SCENE, s.id, time);
+          const o = SUBJ[s.id];
+          o.position.set(st.foot[0], st.foot[1], st.foot[2]);
+          o.rotation.y = st.yaw;
+        }
+
+        const c = solveAt(SCENE, time);
+        camera.fov = c.fovY;
+        camera.position.set(c.pos[0], c.pos[1], c.pos[2]);
+        // spin 转的是 up 向量（垂直俯拍时画面自转），roll 是普通横滚。都不转场景
+        const ang = ((c.spin ?? 0) + (c.roll ?? 0)) * Math.PI / 180;
+        camera.up.set(Math.sin(ang), Math.cos(ang), 0);
+        if (Math.abs(c.pos[0] - c.aim[0]) < 1e-4 && Math.abs(c.pos[2] - c.aim[2]) < 1e-4) {
+          // 严格垂直俯拍：up 不能与视线共线，改用水平面内的向量
+          camera.up.set(Math.sin(ang), 0, -Math.cos(ang));
+        }
+        camera.lookAt(c.aim[0], c.aim[1], c.aim[2]);
+        camera.updateProjectionMatrix();
+
+        renderer.render(scene, camera);
+      }
+
+      // 契约：只从 hf-seek 渲染，绝不用 requestAnimationFrame（那会毁掉确定性）
+      const FREEZE = __FREEZE__;   // 单帧预览时锁死在某一时刻，null = 正常播放
+      window.addEventListener("hf-seek", (e) => renderAt(FREEZE ?? e.detail.time));
+      renderAt(FREEZE ?? window.__hfThreeTime ?? 0);
+    </script>
+  </body>
+</html>

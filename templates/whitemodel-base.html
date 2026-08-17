@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        margin: 0; width: 1920px; height: 1080px;
+        overflow: hidden; background: #0a0a0c;
+      }
+      #three-layer { width: 100%; height: 100%; display: block; }
+    </style>
+  </head>
+  <body>
+    <!--
+      ⚠️ 三个属性不能动：
+      data-duration   three 适配器不做时长推断，缺了报 "zero duration"
+      data-no-timeline 没有它，渲染器会轮询 GSAP timeline，白等 45 秒
+      data-width/height 与 renderer.setSize 保持一致
+      改时长时：这里的 data-duration 和下面的 const DUR 要同时改
+    -->
+    <div
+      id="root"
+      data-composition-id="main"
+      data-no-timeline
+      data-start="0"
+      data-duration="10"
+      data-width="1920"
+      data-height="1080"
+    >
+      <canvas id="three-layer"></canvas>
+    </div>
+
+    <script type="module">
+      import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.181.2/+esm";
+
+      // ══════════ 参数区：通常只改这里和下面两个「改这里」区块 ══════════
+      const DUR = 10;          // 时长（秒），要与 data-duration 一致
+      const W = 1920, H = 1080;
+
+      const canvas = document.getElementById("three-layer");
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setSize(W, H, false);
+      renderer.setPixelRatio(1);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0a0c);
+      scene.fog = new THREE.Fog(0x0a0a0c, 18, 46);   // 雾：强化纵深，帮模型读懂远近
+
+      const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 200);
+
+      // 白模材质：只有明暗，没有颜色信息。主角给一个饱和色用于标识身份
+      const matWhite   = new THREE.MeshStandardMaterial({ color: 0xdedede, roughness: 0.85, metalness: 0 });
+      const matGround  = new THREE.MeshStandardMaterial({ color: 0x8a8a8a, roughness: 1,    metalness: 0 });
+      const matSubject = new THREE.MeshStandardMaterial({ color: 0xc0392b, roughness: 0.7,  metalness: 0 });
+
+      // 确定性伪随机：不要用 Math.random()，否则每次渲染不一样
+      let seed = 20260806;
+      const rand = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+
+      // ══════════ 改这里 ①：几何体布置 ══════════
+      // 几何体只是占位符。选形状的唯一标准：轮廓能否让模型认出这是什么类别
+      // Cone=树/山/尖塔  Box=角色/建筑/车  Plane=地面/水面  Cylinder=柱/躯干  Sphere=头/球体
+
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), matGround);
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      for (let i = 0; i < 90; i++) {                       // 地景：圆锥阵列
+        const h = 2.2 + rand() * 5.5;
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.8 + rand() * 1.4, h, 24), matWhite);
+        const side = rand() > 0.5 ? 1 : -1;                // 左右分布，中间留通道
+        cone.position.set(side * (3.2 + rand() * 14), h / 2, -rand() * 90 + 6);
+        cone.castShadow = true; cone.receiveShadow = true;
+        scene.add(cone);
+      }
+
+      const subject = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), matSubject);
+      subject.castShadow = true;
+      scene.add(subject);
+
+      const board = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.18, 1.9), matWhite);
+      board.castShadow = true;
+      scene.add(board);
+
+      // 灯光：单一主光 + 环境补光。阴影很重要，它交代空间关系
+      const key = new THREE.DirectionalLight(0xffffff, 2.4);
+      key.position.set(-14, 22, 8);
+      key.castShadow = true;
+      key.shadow.mapSize.set(2048, 2048);
+      key.shadow.camera.near = 1;   key.shadow.camera.far = 90;
+      key.shadow.camera.left = -40; key.shadow.camera.right = 40;
+      key.shadow.camera.top = 40;   key.shadow.camera.bottom = -40;
+      scene.add(key);
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x2a2a30, 0.9));
+
+      // 运镜工具函数：全部是时间的纯函数，这是确定性的前提
+      const easeInOut = (t) => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+      const lerp = (a, b, t) => a + (b - a) * t;
+      const seg  = (t, a, b) => Math.max(0, Math.min(1, (t - a) / (b - a)));
+
+      // ══════════ 改这里 ②：运镜设计 ══════════
+      // 每一段的时间区间要和 prompt 里的时间戳一一对应
+      //   0-4s   低位跟随前推
+      //   4-7s   绕主体半圈
+      //   7-10s  抬升拉远俯瞰
+      function renderAt(timeRaw) {
+        const time = Math.max(0, Math.min(DUR, timeRaw));
+
+        // 主体运动：相机函数会引用 subZ，这样「跟随」才成立
+        const subZ = lerp(4, -34, time / DUR);
+        subject.position.set(0, 1.5, subZ);
+        subject.rotation.y = time * 0.35;
+        board.position.set(0, 0.42, subZ);
+
+        if (time < 4) {
+          const t = easeInOut(seg(time, 0, 4));
+          camera.position.set(lerp(0.6, -1.2, t), lerp(1.4, 2.6, t), lerp(subZ + 11, subZ + 7.5, t));
+          camera.lookAt(0, 1.6, subZ - 2);
+        } else if (time < 7) {
+          const t = easeInOut(seg(time, 4, 7));
+          const ang = lerp(Math.PI * 0.5, Math.PI * 1.35, t);
+          const rad = lerp(8.2, 9.6, t);
+          camera.position.set(Math.cos(ang) * rad, lerp(2.6, 3.4, t), subZ + Math.sin(ang) * rad);
+          camera.lookAt(0, 1.5, subZ);
+        } else {
+          const t = easeInOut(seg(time, 7, 10));
+          const ang = lerp(Math.PI * 1.35, Math.PI * 1.6, t);
+          const rad = lerp(9.6, 26, t);
+          camera.position.set(Math.cos(ang) * rad, lerp(3.4, 20, t), subZ + Math.sin(ang) * rad);
+          camera.lookAt(0, 1.2, subZ - 3);
+        }
+
+        renderer.render(scene, camera);
+      }
+
+      // 契约：只从 hf-seek 渲染，不要用 requestAnimationFrame
+      window.addEventListener("hf-seek", (event) => renderAt(event.detail.time));
+      renderAt(window.__hfThreeTime || 0);
+    </script>
+  </body>
+</html>

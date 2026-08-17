@@ -1,0 +1,6 @@
+node_modules/
+renders/
+*.mp4
+frames/
+_preview/
+.DS_Store

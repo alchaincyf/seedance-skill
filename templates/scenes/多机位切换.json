@@ -1,0 +1,276 @@
+{
+  "meta": {
+    "name": "雨夜长街 · 四机位测试",
+    "duration": 12,
+    "fps": 30,
+    "aspect": "16:9",
+    "width": 1920,
+    "height": 1080,
+    "hero": "hero",
+    "seed": 20260817,
+    "heroRole": "穿深色风衣的男人",
+    "propMap": "两侧的高方块对应六层居民楼，细柱对应路灯，低矮方块对应路边停放的车",
+    "sceneDesc": "雨夜的老城区窄巷，霓虹招牌在湿沥青上反光，两侧是老旧居民楼，纵深处隐没在雨雾里",
+    "style": "《银翼杀手2049》的体积光与湿气，ARRI Alexa 实拍质感，Kodak Vision3 颗粒",
+    "sfx": "<雨点打在伞面和铁皮雨棚上的密集声响>，<脚步踩进积水的闷响>，<远处车流的低频>"
+  },
+  "world": {
+    "background": "0x1a1c20",
+    "fog": [
+      16,
+      80
+    ],
+    "ground": {
+      "type": "plane",
+      "size": 400,
+      "color": "ground"
+    },
+    "light": {
+      "pos": [
+        -16,
+        24,
+        12
+      ],
+      "intensity": 2.2,
+      "ambient": 0.85,
+      "shadowRange": 50
+    },
+    "props": [
+      {
+        "shape": "box",
+        "size": [
+          7,
+          16,
+          9
+        ],
+        "color": "env",
+        "layout": {
+          "type": "line",
+          "count": 7,
+          "from": [
+            -8.5,
+            0,
+            12
+          ],
+          "to": [
+            -8.5,
+            0,
+            -30
+          ]
+        }
+      },
+      {
+        "shape": "box",
+        "size": [
+          7,
+          13,
+          9
+        ],
+        "color": "dark",
+        "layout": {
+          "type": "line",
+          "count": 7,
+          "from": [
+            8.5,
+            0,
+            12
+          ],
+          "to": [
+            8.5,
+            0,
+            -30
+          ]
+        }
+      },
+      {
+        "shape": "cylinder",
+        "r": 0.16,
+        "h": 5.4,
+        "color": "env",
+        "layout": {
+          "type": "line",
+          "count": 6,
+          "from": [
+            -4.2,
+            0,
+            8
+          ],
+          "to": [
+            -4.2,
+            0,
+            -26
+          ]
+        }
+      },
+      {
+        "shape": "cylinder",
+        "r": 0.16,
+        "h": 5.4,
+        "color": "env",
+        "layout": {
+          "type": "line",
+          "count": 6,
+          "from": [
+            4.2,
+            0,
+            8
+          ],
+          "to": [
+            4.2,
+            0,
+            -26
+          ]
+        }
+      },
+      {
+        "shape": "box",
+        "size": [
+          1.9,
+          1.4,
+          4.3
+        ],
+        "color": "dark",
+        "layout": {
+          "type": "line",
+          "count": 4,
+          "from": [
+            -5.6,
+            0,
+            4
+          ],
+          "to": [
+            -5.6,
+            0,
+            -20
+          ]
+        }
+      }
+    ]
+  },
+  "subjects": [
+    {
+      "id": "hero",
+      "shape": "human",
+      "height": 1.78,
+      "color": "hero",
+      "faceAlongPath": true,
+      "path": [
+        {
+          "t": 0,
+          "p": [
+            0.4,
+            0,
+            10
+          ],
+          "ease": "out"
+        },
+        {
+          "t": 5,
+          "p": [
+            0.1,
+            0,
+            1
+          ],
+          "ease": "linear"
+        },
+        {
+          "t": 9,
+          "p": [
+            -0.3,
+            0,
+            -6
+          ],
+          "ease": "linear"
+        },
+        {
+          "t": 12,
+          "p": [
+            -0.3,
+            0,
+            -13
+          ],
+          "ease": "inOut"
+        }
+      ]
+    }
+  ],
+  "shots": [
+    {
+      "t": [
+        0,
+        4
+      ],
+      "rig": "follow",
+      "target": "hero",
+      "lag": 2.2,
+      "height": [
+        1.5,
+        1.5
+      ],
+      "lens": 28,
+      "shake": {
+        "amp": 0.02,
+        "freq": 1.1
+      },
+      "action": "他快步走进巷子，帽檐不断滴水，脚步溅起地面积水"
+    },
+    {
+      "t": [
+        4,
+        7.5
+      ],
+      "rig": "lead",
+      "target": "hero",
+      "lead": 3.6,
+      "height": [
+        1.4,
+        1.2
+      ],
+      "lens": 35,
+      "action": "他抬头看向巷子深处，脚步没停，呼吸在冷空气里凝成白雾"
+    },
+    {
+      "t": [
+        7.5,
+        10
+      ],
+      "rig": "orbit",
+      "target": "hero",
+      "radius": [
+        4.2,
+        3.4
+      ],
+      "height": [
+        1.6,
+        2.1
+      ],
+      "angle": [
+        210,
+        330
+      ],
+      "lens": 50,
+      "ease": "linear",
+      "action": "他放慢脚步，回头看了一眼身后的巷口"
+    },
+    {
+      "t": [
+        10,
+        12
+      ],
+      "rig": "crane",
+      "from": [
+        3.5,
+        2.4,
+        -7
+      ],
+      "to": [
+        0.5,
+        15,
+        5
+      ],
+      "lookAt": "hero",
+      "lens": 24,
+      "action": "他继续往深处走，身影变小，整条巷子的纵深随镜头升起而显形"
+    }
+  ]
+}

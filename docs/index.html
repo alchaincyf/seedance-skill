@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>huashu-seedance · 这套方法从哪来</title>
+<style>
+:root{
+  --bg:#0d0d0f; --panel:#151518; --panel2:#1c1c20; --line:#26262b;
+  --tx:#e8e6e3; --dim:#8a8a92; --accent:#d97757; --good:#6fae7c; --bad:#c9605a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);
+  font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;
+  line-height:1.78;padding:60px 32px 110px;font-size:15px}
+.wrap{max-width:1180px;margin:0 auto}
+
+h1{font-size:32px;font-weight:600;letter-spacing:-.02em;margin-bottom:12px}
+.lede{color:var(--dim);font-size:16px;margin-bottom:14px;max-width:760px}
+.lede b{color:var(--accent);font-weight:500}
+.meta{font-size:13px;color:#5c5c64;margin-bottom:56px}
+
+h2{font-size:12px;font-weight:700;letter-spacing:.16em;color:var(--accent);
+  margin:64px 0 20px;text-transform:uppercase}
+h3{font-size:20px;font-weight:600;margin-bottom:6px}
+
+/* 铁律块 */
+.law{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:26px 28px;margin-bottom:20px}
+.law .no{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.1em;
+  color:var(--accent);background:rgba(217,119,87,.12);
+  padding:3px 9px;border-radius:5px;margin-bottom:12px}
+.law .why{color:var(--dim);font-size:14.5px;margin-top:8px;max-width:820px}
+.law .why b{color:var(--tx);font-weight:600}
+
+/* 证据 */
+.evi{margin-top:22px;padding-top:20px;border-top:1px dashed var(--line)}
+.evi-h{font-size:12px;letter-spacing:.1em;color:#6c6c74;margin-bottom:14px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.shot img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;
+  border:1px solid var(--line);cursor:zoom-in;display:block}
+.shot .tag{display:flex;align-items:center;gap:8px;margin:10px 0 5px}
+.pill{font-size:10.5px;font-weight:700;letter-spacing:.07em;padding:2px 7px;
+  border-radius:4px;background:#2a2a30;color:var(--dim)}
+.pill.ok{background:rgba(111,174,124,.16);color:var(--good)}
+.pill.no{background:rgba(201,96,90,.14);color:var(--bad)}
+.shot .nm{font-size:13.5px;font-weight:600}
+.shot .ds{font-size:12.5px;color:var(--dim);line-height:1.62}
+
+details{margin-top:16px;background:var(--panel2);border:1px solid var(--line);
+  border-radius:9px;overflow:hidden}
+summary{padding:11px 16px;cursor:pointer;font-size:13px;color:var(--dim);
+  list-style:none;user-select:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";color:var(--accent)}
+details[open] summary::before{content:"▾ "}
+summary:hover{color:var(--tx)}
+.dbody{padding:2px 16px 18px}
+.pv{margin-bottom:14px}
+.pv h4{font-size:11.5px;color:var(--accent);letter-spacing:.06em;margin-bottom:6px}
+.pv p{font-size:12.8px;line-height:1.85;color:#b9b7b3;background:#0a0a0c;
+  padding:12px 14px;border-radius:6px;border-left:2px solid var(--line)}
+mark{background:rgba(111,174,124,.18);color:#a9d8b4;padding:1px 3px;border-radius:3px}
+mark.b{background:rgba(201,96,90,.16);color:#e6a9a4}
+
+blockquote{border-left:2px solid var(--accent);padding:2px 0 2px 16px;
+  color:#c4c1bd;font-size:14px;margin:14px 0;max-width:820px}
+code{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12.5px;
+  background:#0a0a0c;padding:2px 6px;border-radius:4px;color:#d8b9a8}
+pre{background:#0a0a0c;border:1px solid var(--line);border-radius:8px;
+  padding:14px 16px;overflow-x:auto;margin:12px 0}
+pre code{background:none;padding:0;font-size:12.5px;line-height:1.7;color:#b9b7b3}
+
+/* 流水线 */
+.pipe{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:30px}
+.pipe-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:center}
+.lines{display:flex;flex-direction:column;gap:12px}
+.node{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:14px 16px}
+.node .h{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.node .k{font-size:10.5px;font-weight:700;color:var(--accent);letter-spacing:.08em}
+.node .t{font-size:14px;font-weight:600}
+.node .d{font-size:12.5px;color:var(--dim);line-height:1.6}
+.arrowcol{font-size:22px;color:var(--accent);opacity:.7;text-align:center}
+.out{background:linear-gradient(180deg,rgba(217,119,87,.09),transparent);
+  border:1px solid rgba(217,119,87,.3);border-radius:9px;padding:18px}
+.out .t{font-size:14px;font-weight:600;margin-bottom:6px}
+.out .d{font-size:12.5px;color:var(--dim);line-height:1.6}
+
+/* 优化表 */
+table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13.5px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;letter-spacing:.1em;color:#6c6c74;font-weight:600;text-transform:uppercase}
+td:first-child{color:var(--bad);font-weight:500;white-space:nowrap}
+td code{white-space:nowrap}
+
+.src{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:6px}
+.src .c{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:14px 16px}
+.src .c .n{font-size:13.5px;font-weight:600;margin-bottom:4px}
+.src .c .u{font-size:11.5px;color:#5c5c64;word-break:break-all;line-height:1.5}
+.src .c .w{font-size:12px;color:var(--dim);margin-top:6px}
+.warn{color:var(--bad)}
+
+footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--line);
+  font-size:12.5px;color:#5c5c64;line-height:1.8}
+
+#lb{position:fixed;inset:0;background:rgba(6,6,8,.96);display:none;
+  align-items:center;justify-content:center;z-index:99;cursor:zoom-out;padding:28px}
+#lb img{max-width:100%;max-height:100%;border-radius:6px}
+#lb.on{display:flex}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>huashu-seedance</h1>
+<p class="lede">把「想拍什么」变成一条 Seedance 2.5 能准确执行的指令。四条产线：<b>提示词</b>、<b>白模</b>、<b>参考图</b>、<b>照片反解</b>。</p>
+<p class="lede">这一页不讲怎么用（那是 SKILL.md 的事），讲的是<b>这些规则凭什么这么定</b> —— 每一条后面都挂着实测证据。</p>
+<p class="meta">建立 2026-08-06，2026-08-17 加入 scene.json 引擎与照片反解产线 · 方法论出处：字节 Seed 官方发布博客与官方演示物料，以及一次同场景多版本对照实测</p>
+
+<h2>一 · 这套方法从哪来</h2>
+
+<div class="law">
+  <h3>一手官方文档，不用二手转述</h3>
+  <p class="why">网上的 <code>xxx-prompt-guide</code> 绝大多数是二手转述加模板堆砌。这套规则只采信四家模型团队自己写的东西，以及他们官方演示物料里配着成片的 prompt 原文。<br><b>口径冲突时以 Seedance 2.5 / 2.0 为准</b> —— 本 skill 服务的是 Seedance 生成，别家的最佳实践未必迁移得过来（见铁律五的实例）。</p>
+  <div class="src">
+    <div class="c"><div class="n">字节 Seed · Seedance 2.5 发布博客 ✅采纳</div>
+      <div class="u">seed.bytedance.com/en/blog/one-take-creation-flexible-referencing-introducing-seedance-2-5</div>
+      <div class="w">2026-07-31 · 含 8 段官方 prompt 原文</div></div>
+    <div class="c"><div class="n">字节 Seed · 官方演示物料 ✅采纳</div>
+      <div class="u">发布视频内嵌的 prompt 展示卡</div>
+      <div class="w">含 18 图 + 3 音频的商业级案例中文原文</div></div>
+    <div class="c"><div class="n">Google Cloud · Veo 3.1 指南 ⚠️参考</div>
+      <div class="u">cloud.google.com/blog/products/ai-machine-learning/ultimate-prompting-guide-for-veo-3-1</div>
+      <div class="w warn">2025-10-16，已超半年</div></div>
+    <div class="c"><div class="n">OpenAI Cookbook · Sora 2 ⚠️参考</div>
+      <div class="u">developers.openai.com/cookbook/examples/sora/sora2_prompting_guide</div>
+      <div class="w warn">Sora 应用 2026-04-26 已关停</div></div>
+  </div>
+</div>
+
+<h2>二 · 铁律与它们的证据</h2>
+
+<div class="law">
+  <span class="no">铁律 03</span>
+  <h3>用技术术语，不用形容词</h3>
+  <p class="why">「电影感」只能被模型理解成「好看」。要写《敦刻尔克》、IMAX 65mm、Kodak Vision3、体积光柱、侧逆光。<br>
+  原理：2026 年的模型是在海量专业摄影数据上训练的，<b>它们对技术术语的响应远好于华丽形容词</b>。</p>
+
+  <div class="evi">
+    <div class="evi-h">实测 · 同一个场景，只改 prompt</div>
+    <div class="row">
+      <div class="shot"><img src="assets/cloud-v1.jpg" alt="v1">
+        <div class="tag"><span class="pill no">V1</span><span class="nm">图库壁纸</span></div>
+        <div class="ds">用「电影感实拍质感、胶片颗粒」。均匀日落曝光、没有主体、没有尺度、光是平的。</div></div>
+      <div class="shot"><img src="assets/cloud-v2.jpg" alt="v2">
+        <div class="tag"><span class="pill no">V2</span><span class="nm">电影感有了，但被框住</span></div>
+        <div class="ds">换成片名锚点＋体积光柱＋战斗机剪影撑尺度。可「变形宽银幕」被理解成要画黑边。</div></div>
+      <div class="shot"><img src="assets/cloud-v3.jpg" alt="v3">
+        <div class="tag"><span class="pill ok">V3</span><span class="nm">可用</span></div>
+        <div class="ds">去掉「宽银幕」、补「不是CG渲染」「填满画幅」，残留细边框裁掉。</div></div>
+    </div>
+
+    <details>
+      <summary>展开：三版 prompt 差在哪</summary>
+      <div class="dbody">
+        <div class="pv"><h4>V1</h4><p>高空云海俯瞰，积云层层堆叠像山脉，夕阳把云顶染成暖金……光线通透有体积感，<mark class="b">电影感实拍质感，胶片颗粒</mark>，16:9 电影画幅</p></div>
+        <div class="pv"><h4>V2 · 把形容词全换成可指认的东西</h4><p><mark>IMAX 65mm 航拍，摄影参照《敦刻尔克》与《壮志凌云独行侠》的空战摄影</mark>。……<mark>一架战斗机的黑色小剪影正贴着右侧云壁飞行，与云壁形成悬殊的尺度对比</mark>。<mark>低角度侧逆光</mark>从云缝间射出，形成数道<mark>清晰的体积光柱</mark>穿透云谷……<mark class="b">变形宽银幕镜头</mark>，<mark>Kodak Vision3 胶片颗粒</mark></p></div>
+        <div class="pv"><h4>V3 · 去掉惹祸的词，补上防线</h4><p>IMAX 65mm <mark>航拍实景摄影</mark>……<mark>实拍照片质感不是CG渲染</mark>……<mark>画面内容完整填满整个16:9画幅，不要黑边，不要信箱式黑框，不要边框装饰</mark></p></div>
+      </div>
+    </details>
+
+    <div class="evi-h" style="margin-top:22px">同一条规律的第二个样本 ·「巨大」这个词本身完全没用</div>
+    <div class="row">
+      <div class="shot"><img src="assets/book-v1.jpg" alt="书页v1">
+        <div class="tag"><span class="pill no">V1</span><span class="nm">纸品广告静物</span></div>
+        <div class="ds">prompt 里写了「巨大」，但画面里一点都不大 —— 因为没有任何东西可以比。</div></div>
+      <div class="shot"><img src="assets/book-v3.jpg" alt="书页v3">
+        <div class="tag"><span class="pill ok">V3</span><span class="nm">实景巨物</span></div>
+        <div class="ds">加一个渺小人影，「巨大」立刻成立。再补「不是CG不是插画」和暖冷对比，从静物变成现场。</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="law">
+  <span class="no">铁律 02</span>
+  <h3>每个参考素材必须声明「继承什么 / 不继承什么」</h3>
+  <p class="why">漏掉「不继承」，<b>模型会把参考里的一切都端过来</b>。这是所有规律里最重要的一条。</p>
+  <blockquote>参考 @白模1 的<b>运镜、镜头节奏、景别变化、主体轨迹和镜头调度</b>。参考 @图片2 的<b>角色外形、场景、材质、光照、色彩和童话氛围</b>，将白模渲染为梦幻温暖、儿童幻想感、3D 动画短片。<br><span style="font-size:12px;color:#5c5c64">—— 字节 Seed 官方演示物料</span></blockquote>
+  <p class="why">注意它把<b>结构</b>和<b>质感</b>完全分开：运动信息从白模来，视觉信息从图片来。这也是本 skill 三条产线的分工依据 —— 白模管构图机位，参考图管材质光线，两者不许越界。</p>
+
+  <div class="evi">
+    <div class="evi-h">实测 · 用 HTML + Three.js 渲的白模，10 秒 1080p 耗时 6.4 秒</div>
+    <div class="row" style="grid-template-columns:1fr">
+      <div class="shot"><img src="assets/whitemodel-frames.jpg" alt="白模抽帧">
+        <div class="tag"><span class="pill ok">白模</span><span class="nm">三段运镜 · 抽帧自检</span></div>
+        <div class="ds">白圆锥当地景、红方块当主体、白板当载具。低位前推穿过锥阵（0-4s）→ 绕主体半圈（4-7s）→ 抬升俯瞰（7-10s）。白模只提供空间关系、运镜路径、时间节奏，材质细节全交给参考图。</div></div>
+    </div>
+    <p class="why" style="margin-top:16px">选 HTML 而不是 Blender 的理由不是省事，是<b>确定性</b>：hyperframes 是单一 paused timeline + seek-safe，同样的代码永远出同样的帧。白模的时间轴因此能和 prompt 里的 <code>0-4s:</code> 严格对齐 —— 这是白模驱动能成立的前提。</p>
+  </div>
+</div>
+
+<div class="law">
+  <span class="no">铁律 04</span>
+  <h3>负面约束要具体到「排除哪个错误品类」</h3>
+  <p class="why">官方从不写「不要低质量」。实际写法全是在排除某一类具体错误：</p>
+  <table>
+    <tr><th>官方原句</th><th>排除的是</th></tr>
+    <tr><td>避免白模塑料感</td><td>材质错误</td></tr>
+    <tr><td>不做教学拆解 / 不出现维修说明式镜头</td><td>叙事品类错误</td></tr>
+    <tr><td>无箭头标签</td><td>图形元素错误</td></tr>
+    <tr><td>不得突然消失</td><td>物理连续性错误</td></tr>
+    <tr><td>无字幕、无音乐 / 无BGM</td><td>音轨错误</td></tr>
+  </table>
+  <p class="why" style="margin-top:14px">Veo 官方对这条有一致的表述：<b>描述你想排除的情景，而不是说「不要什么」</b>。官方原例是写 <code>a desolate landscape with no buildings or roads</code>，而不是 <code>no man-made structures</code>。两家独立得出同一结论，可信度比单一来源高。</p>
+</div>
+
+<div class="law">
+  <span class="no">铁律 05</span>
+  <h3>别把宝押在复杂物理上</h3>
+  <p class="why">四家官方口径完全一致 —— 这是罕见的：</p>
+  <blockquote>仍有改进空间，特别是<b>复杂运动的物理合理性</b>，以及<b>多主体互动场景的稳定性</b>。<br><span style="font-size:12px;color:#5c5c64">—— Seedance 2.5 官方博客结尾，自己承认</span></blockquote>
+  <blockquote>当前视频大模型<b>对数字不敏感</b>，难以保持数量一致性，例如「沙滩上10只小狗」。现阶段也<b>难以生成复杂物理运动</b>，如球的弹跳、高空抛物的轨迹。<br><span style="font-size:12px;color:#5c5c64">—— 可灵 Kling 官方提示词指南</span></blockquote>
+  <p class="why">设计分镜时直接绕开这三类，比反复抽卡便宜得多。</p>
+</div>
+
+<div class="law">
+  <span class="no">铁律 01</span>
+  <h3>口径冲突时以 Seedance 为准</h3>
+  <p class="why">四家官方文档之间有<b>三处真实冲突</b>（对白该不该单开区块、prompt 该长该短、公式该不该守）。这就是网上教程互相矛盾的根源 —— 它们抄的是不同的家。</p>
+  <p class="why" style="margin-top:10px">最典型的反面实例：Sora 2 官方把 <code>Anamorphic 2.0x lens</code> 列为「强 prompt」的范例。但在 Seedream 生成参考图时写 anamorphic，<b>模型会把宽银幕的信箱黑边一起画进画面</b>（上面 V2 那张就是）。<br><b>别家的最佳实践，未必迁移得过来。</b></p>
+</div>
+
+<div class="law">
+  <span class="no">铁律 06</span>
+  <h3>prompt 里的每个数字都必须是从白模量出来的</h3>
+  <p class="why">不是从设计稿抄的，也不是想出来的。2026-08-14 有两条 prompt 就是照设计稿写的：一条承诺「环绕收到 2 米」，白模实际只到 3.4 米；另一条承诺「降回 12 米」，而真降下去会把队形的外顶点拍出画。<b>提示词和白模一旦分头演化，一定会分叉。</b></p>
+  <p class="why" style="margin-top:10px">现在这件事交给工具：<code>make_prompt.mjs</code> 读同一份 <code>scene.json</code>，把景别、机位距离、俯角、环绕角度全部量出来再写进 prompt。改了白模就重跑它。</p>
+</div>
+
+<div class="law">
+  <span class="no">铁律 07</span>
+  <h3>机械验收通过不等于画面正确</h3>
+  <p class="why">2026-08-12 那批白模：五个全渲出来了、<code>lint</code> 全绿、时长全对 —— 抽帧一看，<b>五个里有五个运镜是坏的</b>。相机和主体重叠在同一点、绕的中心不是主体的中心导致主体被裁出画、队形半径超出机位覆盖永远拍不全、前景道具落在相机背后。</p>
+  <p class="why" style="margin-top:10px">这些坑没有一个是 lint 能报出来的，因为它们全是纯几何问题。<code>probe.mjs</code> 把其中可判定的部分做成了渲染前的自动检查，但<b>渲完仍然必须抽帧看</b> —— 体检查得了几何，查不了好不好看。</p>
+</div>
+
+<h2>三 · 流水线怎么跑</h2>
+
+<div class="pipe">
+  <div class="pipe-grid">
+    <div class="lines">
+      <div class="node"><div class="h"><span class="k">产线 B</span><span class="t">白模</span></div>
+        <div class="d">HTML + Three.js → mp4。锁<b>运镜路径、空间关系、时间节奏</b>。<code>npx hyperframes render</code></div></div>
+      <div class="node"><div class="h"><span class="k">产线 C</span><span class="t">参考图</span></div>
+        <div class="d">Seedream 5.0 六要素配方。锁<b>材质、光线、造型</b>。不许带构图倾向</div></div>
+      <div class="node"><div class="h"><span class="k">产线 D</span><span class="t">照片反解</span></div>
+        <div class="d">用户给一张照片 → 反解出空间与相机参数搭成白模。同一张照片再当 <code>@图片1</code>，<b>空间与质感天然一致</b></div></div>
+      <div class="node"><div class="h"><span class="k">产线 A</span><span class="t">提示词</span></div>
+        <div class="d">按官方四段式范式：时长画幅 → 参考绑定 → 镜头序列 → 全局约束</div></div>
+    </div>
+    <div class="arrowcol">▶</div>
+    <div class="out">
+      <div class="t">一条可直接生成的 Seedance 指令</div>
+      <div class="d">用定向引用语法把三者绑定：<br><code>@白模1</code> 给运镜与调度，<code>@图片N</code> 给材质与光线，两边各自写清「不继承什么」，再叠上时间戳分段与负面约束。</div>
+    </div>
+  </div>
+  <p class="why" style="margin-top:20px;color:var(--dim);font-size:13.5px">
+  典型顺序：<b>澄清需求 → 给用户看镜头表 → B 做白模锁运镜 → C 做参考图锁质感 → A 把两者绑成一条 prompt</b>。<br>
+  产线不必全跑。只要提示词就跑 A；运镜复杂就加 B；质感要求高就加 C；用户给了照片就用 D 顶替 B+C 的起点。</p>
+  <p class="why" style="margin-top:14px;color:var(--dim);font-size:13.5px">
+  <b>第一步永远是澄清，不是开渲。</b> 只有三件事必须问用户：多长、发在哪（画幅）、一镜到底还是切镜头；其余的先推断再摊给他否决。
+  摊完假设先给一张 3-5 行的镜头表 —— 文字改一行只要一秒，白模建完再改是几分钟。2026-08-15 那次三条片子全部返工，根因就是跳过了这一步。</p>
+  <p class="why" style="margin-top:14px;color:var(--dim);font-size:13.5px">
+  产线 B 现在不写三维代码，写一份 <code>scene.json</code>：<code>probe.mjs</code> 拿它做渲染前体检，<code>build.mjs</code> 拿它生成可渲染工程，<code>make_prompt.mjs</code> 拿它量运镜、出提示词草稿。
+  <b>三个工具共用同一份数据，这是提示词和白模不可能对不上的原因。</b></p>
+</div>
+
+<h2>四 · 什么情况下怎么优化</h2>
+
+<table>
+  <tr><th>症状</th><th>八成是哪里的问题</th><th>去哪改</th></tr>
+  <tr><td>画面像图库壁纸</td><td>prompt 里全是形容词，没有可指认的锚点</td><td><code>references/reference-image.md</code> 六要素逐条对</td></tr>
+  <tr><td>出来是 CG 概念图不是实拍</td><td>漏了「实拍照片质感不是CG渲染不是概念插画」</td><td>同上 · 固定尾巴</td></tr>
+  <tr><td>画面带黑边或胶片框</td><td>写了「变形宽银幕 / anamorphic」</td><td>删掉它，并补「填满画幅不要黑边」</td></tr>
+  <tr><td>写了「巨大」但看不出大</td><td>缺尺度参照物</td><td>加一个渺小的人影 / 载具剪影</td></tr>
+  <tr><td>运镜不听话、时间对不上</td><td>只用文字描述运镜，没有白模</td><td><code>references/whitemodel.md</code> 起白模</td></tr>
+  <tr><td>参考素材多了反而更糊</td><td>每张图各带构图倾向，把镜头拽向多个方向</td><td>参考图只声明材质光线，构图交给白模</td></tr>
+  <tr><td>主体在镜头间跑偏 / 换脸</td><td>没有逐素材的定向声明</td><td><code>references/prompt-spec.md</code> 定向引用一节</td></tr>
+  <tr><td>素材上十几张就写崩</td><td>逐张说明，没有分组</td><td>按功能分组打包，只有人物逐个点名</td></tr>
+  <tr><td>成片里主体在某一段整个消失</td><td>白模里它太小了 —— 占画高不到 10%，位移又被缓动吃掉</td><td>拉近机位或给那段真实位移。<code>probe.mjs</code> 会提前报</td></tr>
+  <tr><td>白模画面只剩一条边、主体被挡死</td><td>环绕半径太大，相机绕进墙里了</td><td>收小半径或抬高机位。<code>probe.mjs</code> 会提前报</td></tr>
+  <tr><td>白模人物像在倒着走</td><td>人物朝向套用了机位的角度公式，两者零点差 180°</td><td>朝向交给引擎从路径切线算，别手填角度</td></tr>
+  <tr><td>成片里出现莫名其妙的色块人群</td><td>白模主体的颜色渗进成片了</td><td>除主角外一律灰白系，主角只给一个饱和色</td></tr>
+  <tr><td>白模首帧是坏的</td><td>渲染管线的首帧未结算 bug</td><td>量 <code>f0→f1 ÷ f1→f2</code>，大于 2 就做帧手术丢首帧补末帧，不用重渲</td></tr>
+  <tr><td>渲染报 zero duration</td><td>根元素缺 <code>data-duration</code></td><td>three 适配器不做时长推断，必须显式给</td></tr>
+  <tr><td>每次渲染白等 45 秒</td><td>根元素缺 <code>data-no-timeline</code></td><td>加上它，跳过 GSAP 轮询</td></tr>
+  <tr><td>check 报 sweep_static</td><td>误报。它测 DOM 几何变化，白模动画在 canvas 像素里</td><td>以 render 出的 mp4 为准，别加无意义 DOM 动画</td></tr>
+</table>
+
+<h2>五 · 这套东西会怎么过时</h2>
+
+<div class="law">
+  <p class="why">
+  <b>模型迭代会让部分规则失效</b>，尤其是铁律五那三条限制 —— 它们是当前的能力边界，不是永久事实。Seedance 3.0 出来时要重测一遍。<br><br>
+  <b>参考的三家官方文档已经在老化</b>：Veo 3.1 那份发布于 2025-10，Sora 2 那份对应的应用已在 2026-04 关停，Kling 那份还停在 5-10 秒时代。它们的<b>方法论</b>仍然有效，<b>参数和限制</b>请勿直接引用。<br><br>
+  <b>怎么更新</b>：新模型发布时，去它的官方博客与官方演示物料里找配着成片的 prompt 原文 —— 那是唯一可靠的一手来源。把新原文归档下来，再回来修订这几条铁律。
+  </p>
+</div>
+
+<footer>
+huashu-seedance · 说明页<br>
+方法论来源：各家模型团队的官方发布博客与官方演示物料（配着成片的 prompt 原文）<br>
+页内实测图片均为本 skill 自行生成（Seedream 5.0 参考图、hyperframes 白模），官方原文以引用形式标注出处。
+</footer>
+
+</div>
+
+<div id="lb"><img id="lbi" src=""></div>
+<script>
+const lb=document.getElementById('lb'),lbi=document.getElementById('lbi');
+document.querySelectorAll('.shot img').forEach(i=>{
+  i.onclick=()=>{lbi.src=i.src;lb.classList.add('on');};
+});
+lb.onclick=()=>lb.classList.remove('on');
+document.onkeydown=e=>{if(e.key==='Escape')lb.classList.remove('on');};
+</script>
+</body>
+</html>

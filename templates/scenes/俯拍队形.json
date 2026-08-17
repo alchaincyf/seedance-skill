@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "name": "俯拍队形 · topdown 测试",
+    "duration": 8,
+    "fps": 30,
+    "aspect": "16:9",
+    "hero": "d1",
+    "formationRadius": 6.2,
+    "seed": 424242
+  },
+  "world": {
+    "background": "0x141519",
+    "ground": {
+      "type": "disc",
+      "size": 14,
+      "color": "ground"
+    },
+    "light": {
+      "pos": [
+        0,
+        30,
+        6
+      ],
+      "intensity": 2.6,
+      "ambient": 1.0,
+      "shadowRange": 24
+    },
+    "props": [
+      {
+        "shape": "cylinder",
+        "r": 0.5,
+        "h": 1.1,
+        "color": "dark",
+        "layout": {
+          "type": "ring",
+          "count": 18,
+          "radius": 12.5
+        }
+      },
+      {
+        "shape": "box",
+        "size": [
+          1.2,
+          0.3,
+          9
+        ],
+        "color": "env",
+        "pos": [
+          6,
+          0,
+          0
+        ],
+        "rotY": 0
+      }
+    ]
+  },
+  "subjects": [
+    {
+      "id": "d1",
+      "shape": "human",
+      "height": 1.7,
+      "color": "hero",
+      "skirt": 0.75,
+      "path": [
+        {
+          "t": 0,
+          "p": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "t": 8,
+          "p": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "shots": [
+    {
+      "t": [
+        0,
+        8
+      ],
+      "rig": "topdown",
+      "center": [
+        0,
+        0,
+        0
+      ],
+      "height": [
+        20,
+        26
+      ],
+      "spin": [
+        0,
+        45
+      ],
+      "lens": 35
+    }
+  ]
+}
