@@ -112,6 +112,47 @@ if (HERO) {
   });
 }
 
+// ── 2b. 配角出画 / 两个主体在画面上重叠 ────────────────────
+// 2026-08-17 踩的：体检零红、lint 全绿，抽帧一看对手整段出画、另一段两人重叠成一条竖线。
+// 根因是这里只盯 meta.hero 一个人——而双人对打的片子，对手不在画面里就等于没有戏。
+// 一镜到底尤其致命：没有硬切可以躲，坏了就是整条坏
+{
+  const actors = (scene.subjects ?? []).filter((s) => (s.shape ?? "human") === "human" && s.id !== HERO);
+  for (const a of actors) {
+    const outFrames = [], overlapFrames = [];
+    for (const r of rows) {
+      if (!r.hero) continue;
+      const o = subjectAt(scene, a.id, Math.min(r.time, DUR));
+      const p = project(o.center, r.cam, ASPECT);
+      if (p.behind || Math.abs(p.x) > 1 || Math.abs(p.y) > 1) { outFrames.push(r.f); continue; }
+      // 重叠：两人投影到画面上的水平间距，折算成「几个身宽」。
+      // 身宽按身高的 0.26 估（和主体占比用的是同一个系数）
+      const dPix = Math.abs(p.x - r.pCen.x) / 2 * (ASPECT > 1 ? ASPECT : 1);
+      const bodyFrac = (o.height * 0.26) / Math.max(0.01, visibleHeightAt2(o.center, r.cam));
+      if (!r.pCen.behind && dPix < bodyFrac * 0.9) overlapFrames.push(r.f);
+    }
+    if (outFrames.length) {
+      const pct = outFrames.length / rows.length;
+      // 首尾 0.5 秒不看占比直接判红：开场和收尾是观众唯一记得住的两帧，
+      // 15 秒的片子末尾丢 0.43 秒只占 3%，按占比算会被降成黄——而那正是定格画面
+      const edge = outFrames.some((f) => f / FPS < 0.5 || f / FPS > DUR - 0.5);
+      const m = `配角「${a.id}」有 ${(pct * 100).toFixed(1)}% 的时间在画外：${toRanges(outFrames, FPS)}`
+        + ` —— 双人戏里对手不在画面等于没有戏${edge ? "，而且落在开场或收尾的定格帧上" : ""}`;
+      pct > 0.05 || edge ? bad(m) : warn(m);
+    }
+    if (overlapFrames.length > rows.length * 0.06)
+      bad(`「${a.id}」与主体在画面上重叠成一团：${toRanges(overlapFrames, FPS)} —— 相机落在两人连线方向上了。`
+        + `要么把环绕角度挪开这个方位，要么给两人加垂直于连线的错位（对角线站位比正对站位稳）`);
+    else if (overlapFrames.length)
+      notes.push(`「${a.id}」与主体短暂重叠：${toRanges(overlapFrames, FPS)} —— 贴身缠斗时正常，确认不是相机方位造成的`);
+  }
+}
+// 某点所在深度上，画面覆盖的真实高度（米）——用来把「米」换算成「占画面的比例」
+function visibleHeightAt2(pt, cam) {
+  const d = Math.hypot(...[0, 1, 2].map((j) => pt[j] - cam.pos[j]));
+  return 2 * d * Math.tan((cam.fovY * Math.PI) / 180 / 2);
+}
+
 // ── 3. 相机穿模 / 贴地拍出「地面洞」 ───────────────────────
 // 实证：悬空盘场景里相机 Y=0.25 几乎与地板共面，画面最底一行 94-98% 纯黑，人脚悬在虚空里。抬到 1.6 后归零
 rows.forEach((r) => {

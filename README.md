@@ -34,7 +34,7 @@
 |---|---|
 | 需求没澄清 | `references/intake.md` —— 只问三件必须问的（多长、发在哪、一镜到底还是切镜头），其余先推断再摊给用户否决，摊完先给一张镜头表让他改字 |
 | 白模坏了看不出来 | `engine/probe.mjs` —— 渲染前纯数学扫一遍时间轴：主体出画、主体太小会被模型丢掉、死时间、缓动瘫尾、相机钻进墙里、队形超框、画幅不一致，全部在渲染前报出来 |
-| 提示词对不上 | `engine/make_prompt.mjs` —— 从白模的实际几何量出景别、机位距离、俯角、环绕角度，用量出来的数字写提示词，而不是用意图 |
+| 提示词对不上 | `engine/make_prompt.mjs` —— 从白模的实际几何量出景别、机位距离、俯角、环绕角度，用量出来的数字写提示词，而不是用意图；同时按六要素配方产出配套的参考图提示词 |
 
 ## 四条产线
 
@@ -59,12 +59,13 @@ cp "$SKILL_DIR/templates/scenes/多机位切换.json" scene.json
 node "$SKILL_DIR/engine/probe.mjs" scene.json     # 体检，必须 0 个 🔴
 node "$SKILL_DIR/engine/build.mjs" scene.json     # 生成 index.html
 npx hyperframes render --quality draft --output whitemodel.mp4
+node "$SKILL_DIR/engine/frames.mjs" whitemodel.mp4 scene.json   # 抽帧自检
 node "$SKILL_DIR/engine/make_prompt.mjs" scene.json > prompt.md
 ```
 
 12 秒 1080p 白模渲染约 9 秒。然后把 `whitemodel.mp4` 挂给 Seedance 当 `@白模1`，用 `prompt.md` 里的草稿填上叙事内容。
 
-**渲完一定要抽帧看。** 体检查得了几何，查不了好不好看——这一步没有替代品。
+**渲完一定要抽帧看。** 体检查得了几何，查不了好不好看——这一步没有替代品。`frames.mjs` 会按镜头切点和段内均分自动挑帧（切点前后正是最容易坏的地方，均匀抽会跳过它）。反过来也成立：抽帧看过不等于全片对，坏的往往在你没挑的那一段——所以先让 `probe.mjs` 报出可疑区间，再去抽那几帧。
 
 ## 安装
 
@@ -112,8 +113,9 @@ engine/
   renderer.html                 通用渲染器模板
   build.mjs                     scene.json → 可渲染的 index.html
   probe.mjs                     渲染前几何体检
-  preview.mjs                   单帧预览（对构图用）
-  make_prompt.mjs               运镜事实表 + 提示词草稿
+  preview.mjs                   单帧预览（对构图用，可一次多个时刻，附带机位事实）
+  frames.mjs                    从渲好的白模抽帧自检
+  make_prompt.mjs               运镜事实表 + 提示词草稿 + 参考图提示词
   photo_grid.py                 照片叠网格读数
 templates/
   scenes/                       三个可直接改的样板
@@ -133,7 +135,7 @@ docs/index.html                 给人看的说明页：这套规则凭什么这
 
 An AI-agent workbench for Seedance 2.5 video generation. Its core idea: the clay-render reference video and the text prompt are generated from **one** `scene.json`, so they can never drift apart.
 
-Three tools do the work. `probe.mjs` catches geometry defects *before* rendering — subject out of frame, subject too small for the model to keep, dead time, camera stuck inside a wall, formation wider than the lens can cover. `build.mjs` compiles the scene into a deterministic Three.js composition (roughly 9 seconds for 12s of 1080p). `make_prompt.mjs` measures the actual geometry — shot size, camera distance, tilt, orbit sweep — and writes the prompt draft from those numbers rather than from intent.
+Three tools do the work. `probe.mjs` catches geometry defects *before* rendering — subject out of frame, subject too small for the model to keep, dead time, camera stuck inside a wall, formation wider than the lens can cover. `build.mjs` compiles the scene into a deterministic Three.js composition (roughly 9 seconds for 12s of 1080p). `make_prompt.mjs` measures the actual geometry — shot size, camera distance, tilt, orbit sweep — and writes the prompt draft from those numbers rather than from intent, along with a matching reference-image prompt. `frames.mjs` pulls self-check frames from the rendered file, sampling around cut points where things break most often.
 
 A fourth pipeline reconstructs a clay-render scene from a user-supplied photo, so the same image serves as both the spatial source and the texture reference.
 

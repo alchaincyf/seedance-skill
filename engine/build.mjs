@@ -35,13 +35,21 @@ const ASPECT_SIZE = { "16:9": [1920, 1080], "9:16": [1080, 1920], "1:1": [1080, 
 // --freeze <秒>：产出一个锁死在该时刻的单帧工程，用于快速对构图（照片反解时要反复看首帧）
 const fi = process.argv.indexOf("--freeze");
 const freeze = fi > 0 ? Number(process.argv[fi + 1]) : null;
-if (freeze !== null) scene.meta = { ...scene.meta, duration: 0.1 };
+if (freeze !== null && !(freeze >= 0 && freeze <= scene.meta.duration)) {
+  console.error(`✗ --freeze ${freeze} 超出 0–${scene.meta.duration}s`);
+  process.exit(1);
+}
+// ⚠️ 时间轴长度（data-duration，freeze 时缩到 0.1 秒只渲一帧）和场景时长（SCENE.meta.duration）
+// 必须分开。2026-08-17 踩过：freeze 时把 scene.meta.duration 一起改成 0.1，
+// 而渲染器用 Math.min(DUR, t) 钳时间——于是不管传哪个时刻，渲出来的永远是 t=0.1 那一帧。
+// 三张「不同时刻」的预览图逐像素相同，看上去像运镜没生效，白查一轮
+const timelineDur = freeze !== null ? 0.1 : scene.meta.duration;
 const tpl = readFileSync(join(here, "renderer.html"), "utf8");
 // 去掉 export 关键字：内联进 <script type="module"> 后这些函数是同作用域直接可见的
 const solver = readFileSync(join(here, "solver.mjs"), "utf8").replace(/^export /gm, "");
 
 const html = tpl
-  .replace("__DURATION__", String(scene.meta.duration))
+  .replace("__DURATION__", String(timelineDur))
   .replace("__WIDTH__", String(scene.meta.width ?? 1920))
   .replace("__HEIGHT__", String(scene.meta.height ?? 1080))
   .replace("__SCENE__", JSON.stringify(scene, null, 2))
@@ -49,6 +57,6 @@ const html = tpl
   .replace("__FREEZE__", freeze === null ? "null" : String(freeze));
 
 writeFileSync(outFile, html);
-const frames = scene.meta.duration * (scene.meta.fps ?? 30);
 console.log(`✅ ${outFile}`);
-console.log(`   ${scene.meta.duration}s × ${scene.meta.fps ?? 30}fps = ${frames} 帧 · ${scene.shots?.length ?? 0} 个镜头`);
+if (freeze !== null) console.log(`   单帧工程，锁死在 t=${freeze}s`);
+else console.log(`   ${scene.meta.duration}s × ${scene.meta.fps ?? 30}fps = ${scene.meta.duration * (scene.meta.fps ?? 30)} 帧 · ${scene.shots?.length ?? 0} 个镜头`);
