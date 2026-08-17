@@ -2,7 +2,7 @@
 
 # Seedance.skill · 白模驱动的 AI 视频工作台
 
-**Control AI video with clay renders — and a prompt that can't drift from them.**
+**Control AI video with clay renders — and a prompt that can't drift from them.**<br>
 **用白模控制 AI 视频运镜，并让提示词与白模出自同一份数据。**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
