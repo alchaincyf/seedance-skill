@@ -4,3 +4,4 @@ renders/
 frames/
 _preview/
 .DS_Store
+.last-update-check
